@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userprofile-service
+  namespace: homework
+  labels:
+    app: userprofile-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userprofile-service
+  template:
+    metadata:
+      labels:
+        app: userprofile-service
+    spec:
+      containers:
+      - name: userprofile-service
+        image: dmitry8000/homework-api-userprofile-service:latest
+        ports:
+        - containerPort: 5002
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:5002"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userprofile-service
+  namespace: homework
+  labels:
+    app: userprofile-service
+spec:
+  selector:
+    app: userprofile-service
+  ports:
+  - port: 5002
+    targetPort: 5002
+  type: ClusterIP

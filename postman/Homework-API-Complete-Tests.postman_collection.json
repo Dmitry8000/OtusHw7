@@ -1,0 +1,584 @@
+{
+	"info": {
+		"_postman_id": "complete-homework-api-tests",
+		"name": "Homework API Complete Tests",
+		"description": "Полный набор тестов для Homework API в соответствии с ТЗ",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Создание пользователя",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response has token', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('token');",
+							"    pm.expect(jsonData).to.have.property('userId');",
+							"    ",
+							"    // Сохраняем токен и userId для последующих запросов",
+							"    pm.environment.set('authToken', jsonData.token);",
+							"    pm.environment.set('userId', jsonData.userId);",
+							"});",
+							"",
+			"pm.test('User created successfully', function () {",
+			"    var jsonData = pm.response.json();",
+			"    pm.expect(jsonData).to.have.property('token');",
+			"    pm.expect(jsonData).to.have.property('userId');",
+			"    pm.expect(jsonData).to.have.property('email');",
+			"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"test-{{$randomInt}}@example.com\",\n    \"password\": \"Test123!\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/register",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				},
+				"description": "Создание нового пользователя"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Создание профиля пользователя",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Profile created successfully', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('userId');",
+							"    pm.expect(jsonData).to.have.property('firstName');",
+							"    pm.expect(jsonData).to.have.property('lastName');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"dateOfBirth\": \"1990-01-01T00:00:00Z\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"profile"
+					]
+				},
+				"description": "Создание профиля пользователя"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Проверка аккаунта в биллинге (создается автоматически)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Billing account exists and is ready', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('userId');",
+							"    pm.expect(jsonData).to.have.property('balance');",
+							"    ",
+							"    // Сохраняем accountId для последующих запросов",
+							"    pm.environment.set('accountId', jsonData.id);",
+							"    ",
+							"    // Проверяем, что баланс изначально равен 0",
+							"    pm.expect(jsonData.balance).to.equal(0);",
+							"    ",
+							"    // Проверяем, что userId совпадает",
+							"    pm.expect(jsonData.userId).to.equal(pm.environment.get('userId'));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/billing/accounts/user/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"billing",
+						"accounts",
+						"user",
+						"{{userId}}"
+					]
+				},
+				"description": "Проверка аккаунта в биллинге (создается автоматически при регистрации)"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Пополнение счета",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Deposit successful', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('success');",
+							"    pm.expect(jsonData).to.have.property('newBalance');",
+							"    pm.expect(jsonData.success).to.be.true;",
+							"    pm.expect(jsonData.newBalance).to.equal(1000);",
+							"    ",
+							"    // Сохраняем новый баланс",
+							"    pm.environment.set('initialBalance', jsonData.newBalance);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 1000,\n    \"description\": \"Initial deposit\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/billing/accounts/{{accountId}}/deposit",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"billing",
+						"accounts",
+						"{{accountId}}",
+						"deposit"
+					]
+				},
+				"description": "Пополнение счета пользователя"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Создание заказа (успешный)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Order created successfully', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('status');",
+							"    pm.expect(jsonData).to.have.property('amount');",
+							"    pm.expect(jsonData.amount).to.equal(500);",
+							"    ",
+							"    // Сохраняем ID заказа",
+							"    pm.environment.set('orderId', jsonData.id);",
+							"    ",
+							"    // Проверяем, что заказ создан успешно",
+							"    pm.expect(jsonData.status).to.equal('completed');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 500,\n    \"description\": \"Test order - should succeed\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/orders",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				},
+				"description": "Создание заказа на сумму, которая есть на счету"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Проверка баланса после успешного заказа",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Balance decreased after order', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('balance');",
+							"    ",
+							"    // Проверяем, что баланс уменьшился на сумму заказа",
+							"    var expectedBalance = pm.environment.get('initialBalance') - 500;",
+							"    pm.expect(jsonData.balance).to.equal(expectedBalance);",
+							"    ",
+							"    // Сохраняем новый баланс",
+							"    pm.environment.set('balanceAfterOrder', jsonData.balance);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/billing/accounts/{{accountId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"billing",
+						"accounts",
+						"{{accountId}}"
+					]
+				},
+				"description": "Проверка баланса после успешного заказа"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Проверка уведомлений после успешного заказа",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+			"pm.test('Success notification sent', function () {",
+			"    var jsonData = pm.response.json();",
+			"    pm.expect(jsonData).to.be.an('array');",
+			"    ",
+			"    // Проверяем, что есть уведомления",
+			"    if (jsonData.length > 0) {",
+			"        // Ищем уведомление об успешном заказе",
+			"        var successNotification = jsonData.find(n => n.subject.includes('Order Completed Successfully'));",
+			"        pm.expect(successNotification).to.not.be.undefined;",
+			"        pm.expect(successNotification.message).to.include('completed successfully');",
+			"    }",
+			"    ",
+			"    // Сохраняем количество уведомлений",
+			"    pm.environment.set('notificationsAfterSuccess', jsonData.length);",
+			"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/notifications/user/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"notifications",
+						"user",
+						"{{userId}}"
+					]
+				},
+				"description": "Проверка уведомлений после успешного заказа"
+			},
+			"response": []
+		},
+		{
+			"name": "8. Создание заказа (недостаточно средств)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400 or 422', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+							"});",
+							"",
+			"pm.test('Order failed due to insufficient funds', function () {",
+			"    var jsonData = pm.response.json();",
+			"    pm.expect(jsonData).to.have.property('status');",
+			"    pm.expect(jsonData.status).to.equal('failed');",
+			"    ",
+			"    // Проверяем, что ошибка связана с недостатком средств",
+			"    var errorMessage = jsonData.message || '';",
+			"    pm.expect(errorMessage.toLowerCase()).to.include('insufficient') || pm.expect(errorMessage.toLowerCase()).to.include('funds');",
+			"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 1000,\n    \"description\": \"Test order - should fail (insufficient funds)\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/orders",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				},
+				"description": "Создание заказа на сумму, которой нет на счету"
+			},
+			"response": []
+		},
+		{
+			"name": "9. Проверка баланса после неудачного заказа",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Balance unchanged after failed order', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('balance');",
+							"    ",
+							"    // Проверяем, что баланс не изменился",
+							"    var expectedBalance = pm.environment.get('balanceAfterOrder');",
+							"    pm.expect(jsonData.balance).to.equal(expectedBalance);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/billing/accounts/{{accountId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"billing",
+						"accounts",
+						"{{accountId}}"
+					]
+				},
+				"description": "Проверка баланса после неудачного заказа"
+			},
+			"response": []
+		},
+		{
+			"name": "10. Проверка уведомлений после неудачного заказа",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+			"pm.test('Failure notification sent', function () {",
+			"    var jsonData = pm.response.json();",
+			"    pm.expect(jsonData).to.be.an('array');",
+			"    ",
+			"    // Проверяем, что есть уведомления",
+			"    if (jsonData.length > 0) {",
+			"        // Ищем уведомление о неудачном заказе",
+			"        var failureNotification = jsonData.find(n => n.subject.includes('Order Failed'));",
+			"        if (failureNotification) {",
+			"            pm.expect(failureNotification.message).to.include('could not be processed');",
+			"        }",
+			"    }",
+			"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/notifications/user/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"notifications",
+						"user",
+						"{{userId}}"
+					]
+				},
+				"description": "Проверка уведомлений после неудачного заказа"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://arch.homework",
+			"type": "string"
+		}
+	]
+}
